@@ -7,13 +7,14 @@
 	"homepage": "./",
 	"dependencies": {
 		"electron-log": "^4.4.7",
-		"sequelize": "^6.19.0",
+		"sequelize": "^6.20.1",
 		"serialport": "^10.4.0",
-		"sqlite3": "^5.0.8"
+		"sqlite3": "^5.0.8",
+		"usb-2jcie-bu": "^0.0.2"
 	},
 	"devDependencies": {
 		"devtron": "^1.4.0",
-		"electron": "^18.2.0",
+		"electron": "^19.0.3",
 		"electron-rebuild": "^3.2.7",
 		"electron-store": "^8.0.1"
 	},
@@ -21,7 +22,7 @@
 		"win": "set    NODE_ENV=development && electron . --trace-warning",
 		"mac": "export NODE_ENV=development && electron --disable-gpu .",
 		"re-build": "electron-rebuild",
-		"preinstall": "npm i -g electron electron-rebuild"
+		"preinstall": "npm i --location=global electron electron-rebuild"
 	},
 	"build": {
 		"appId": "net.sugi-lab.OmronEnvStore",
