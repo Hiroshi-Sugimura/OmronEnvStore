@@ -1,0 +1,51 @@
+{
+	"name": "OmronEnvStore",
+	"version": "0.0.1",
+	"description": "This app provides Sensing and Database for USB environment sensor (2JCIE-BU) producted by OMRON.",
+	"author": "Hiroshi SUGIMURA (Kanagawa Institute of Technology, JAPAN)",
+	"main": "main.js",
+	"homepage": "./",
+	"dependencies": {
+		"electron-log": "^4.4.7",
+		"sequelize": "^6.19.0",
+		"serialport": "^10.4.0",
+		"sqlite3": "^5.0.8"
+	},
+	"devDependencies": {
+		"devtron": "^1.4.0",
+		"electron": "^18.2.0",
+		"electron-rebuild": "^3.2.7",
+		"electron-store": "^8.0.1"
+	},
+	"scripts": {
+		"win": "set    NODE_ENV=development && electron . --trace-warning",
+		"mac": "export NODE_ENV=development && electron --disable-gpu .",
+		"re-build": "electron-rebuild",
+		"preinstall": "npm i -g electron electron-rebuild"
+	},
+	"build": {
+		"appId": "net.sugi-lab.OmronEnvStore",
+		"extraResources": [
+			{
+				"from": "./extraResources/",
+				"to": "extraResources",
+				"filter": [
+					"**/*"
+				]
+			}
+		],
+		"win": {
+			"icon": "icons/H_pink.ico",
+			"target": "nsis"
+		},
+		"mac": {
+			"icon": "icons/homeele.icns"
+		},
+		"directories": {
+			"output": "../dist"
+		}
+	},
+	"files": [
+		"icons/*"
+	]
+}

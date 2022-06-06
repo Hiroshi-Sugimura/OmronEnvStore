@@ -1,0 +1,23 @@
+{
+	"name": "OmronEnvStore",
+	"version": "0.0.0",
+	"scripts": {
+		"win": "set    NODE_ENV=development && electron ./src",
+		"mac": "export NODE_ENV=development && electron ./src",
+		"build-win": "electron-builder --project ./src --win --x64",
+		"build-mac": "electron-builder --project ./src --mac --x64",
+		"rebuild": "electron-rebuild -f -w sqlite3",
+		"postinstall": "electron-builder install-app-deps"
+	},
+	"devDependencies": {
+		"devtron": "^1.4.0",
+		"electron": "^18.2.0",
+		"electron-log": "^4.4.7",
+		"electron-builder": "^23.0.3",
+		"electron-packager": "^15.5.1"
+	},
+	"private": true,
+	"dependencies": {
+		"electron-store": "^8.0.1"
+	}
+}

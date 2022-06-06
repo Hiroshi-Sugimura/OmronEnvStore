@@ -1,0 +1,3 @@
+/* 画面解像度，横幅でPCかモバイルかを決定する */
+@import url(formal.css) screen and (min-width: 600px);
+@import url(formal_mini.css) screen and (max-width: 599px);
