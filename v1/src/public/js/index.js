@@ -10,6 +10,7 @@ window.__devtron = { require: require, process: process }
 const { ipcRenderer } = require('electron');
 const log = require('electron-log');
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // HTMLがロードされたら実行，とりあえずここに全部突っ込む
 window.addEventListener('DOMContentLoaded', onLoad);
@@ -44,6 +45,8 @@ function onLoad() {
 
 	// 画面に反映
 	let renewScreen = function ( arg ) {
+		// document.getElementById('timestamp').textContent = arg.date;
+		showTimestamp();
 		document.getElementById('temperature').textContent = arg.temperature;
 		document.getElementById('humidity').textContent = arg.humidity;
 		document.getElementById('anbient_light').textContent = arg.anbient_light;

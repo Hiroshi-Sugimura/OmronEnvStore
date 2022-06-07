@@ -130,7 +130,10 @@ let getToday = function() {
 
 //////////////////////////////////////////////////////////////////////
 // Omron管理
+let omronStarted = false;
 let omronStart = function () {
+	if( omronStarted ) { return; }
+	omronStarted = true;
 	omron.start(  (sensorData) => {
 		console.log( '----------------------------' );
 		let dt = new Date();
@@ -163,7 +166,7 @@ ipcMain.on('to-main', function (event, arg) {
 	let c = JSON.parse(arg);
 
 	switch (c.cmd) {
-		case "already": // 準備出来たらRenderer更新して，INF，Reloadもこれがよばれる
+		case "already": // 準備出来たらRenderer更新、画面Reloadもこれが呼ばれるので注意
 		omronStart();
 		break;
 
@@ -230,7 +233,7 @@ const menuItems = [{
 		{
 			label: 'Preferences...',
 			accelerator: isMac ? 'Command+,' : 'Control+,',
-			click: function () { shell.showItemInFolder(configDir); }
+			click: function () { shell.showItemInFolder(configFile); }
 		},
 		{
 			label: 'Quit',
