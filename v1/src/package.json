@@ -8,7 +8,7 @@
 	"dependencies": {
 		"date-utils": "^1.2.21",
 		"electron-log": "^4.4.7",
-		"node-cron": "^3.0.0",
+		"node-cron": "^3.0.1",
 		"sequelize": "^6.20.1",
 		"serialport": "^10.4.0",
 		"sqlite3": "^5.0.8",
