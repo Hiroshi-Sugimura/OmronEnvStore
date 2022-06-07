@@ -1,6 +1,6 @@
 {
 	"name": "OmronEnvStore",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"scripts": {
 		"win": "set    NODE_ENV=development && electron ./src",
 		"mac": "export NODE_ENV=development && electron ./src",
@@ -11,7 +11,7 @@
 	},
 	"devDependencies": {
 		"devtron": "^1.4.0",
-		"electron": "^18.2.0",
+		"electron": "^19.0.3",
 		"electron-log": "^4.4.7",
 		"electron-builder": "^23.0.3",
 		"electron-packager": "^15.5.1"

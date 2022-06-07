@@ -1,3 +1,4 @@
-v1/src/node_modules/
+v1/node_modules/*
+v1/src/node_modules/*
 OmronEnv.db
 config.json

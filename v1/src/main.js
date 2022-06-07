@@ -191,7 +191,7 @@ ipcMain.on('to-main', function (event, arg) {
 // ここがEntrypointと考えても良い
 async function createWindow() {
 	// 何はともあれDBの準備，SQLite の初期化の完了を待つ
-	await sqlite3.sync().then(() => console.log("Local lifelog DB is ready."));
+	await sqlite3.sync().then(() => console.log("Local DB is ready."));
 
 	// 画面の起動
 	mainWindow = new BrowserWindow({
