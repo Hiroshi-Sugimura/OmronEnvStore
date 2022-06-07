@@ -8,7 +8,7 @@ const env = process.env.NODE_ENV || "development";
 
 const path = require('path');
 
-const appname = 'HEMS-Logger';
+const appname = 'OmronEnvStore';
 const userHome = process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"];
 const configDir = path.join(userHome, appname);
 
@@ -16,42 +16,62 @@ const configDir = path.join(userHome, appname);
 const sqlite3 = new Sequelize(
 	'database', '', '', {
 		"dialect": "sqlite",
-		"storage": path.join(configDir, "lifelog.db"),
+		"storage": path.join(configDir, "OmronEnv.db"),
 		"logging": false
 	} );
 
 // freezeTableNameはモデルに渡した名前を実テーブルにマッピングする際に複数形に変換してしまうのを抑制する
-// timestamps: falseを入れておかないと，createdAt, updatedAtが勝手に追加されるみたい
+// timestamps: falseを入れておかないと，createdAt, updatedAtが勝手に追加されるみたい。たいていの場合はtrueでいいけどね
 
 //////////////////////////////////////////////////////////////////////
 // omronData
 const omronModel = sqlite3.define('omron', {
 	id: {
-		type: Sequelize.INTEGER,
+		type: Sequelize.BIGINT,
 		autoIncrement: true,
 		primaryKey: true,
 		allowNull: false
 	},
-	srcip: {
-		type: Sequelize.STRING
+	createdAt: {
+		type: 'TIMESTAMP',
+		defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+		allowNull: false
 	},
-	srcmac: {
-		type: Sequelize.STRING
+	updatedAt: {
+		type: 'TIMESTAMP',
+		defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+		allowNull: false
 	},
-	seoj: {
-		type: Sequelize.STRING
+	date: {
+		type: Sequelize.DATE,
+		allowNull: false
 	},
-	deoj: {
-		type: Sequelize.STRING
+	temperature: {
+		type: Sequelize.FLOAT
 	},
-	esv: {
-		type: Sequelize.STRING
+	humidity: {
+		type: Sequelize.FLOAT
 	},
-	epc: {
-		type: Sequelize.STRING
+	anbient_light: {
+		type: Sequelize.INTEGER
 	},
-	edt: {
-		type: Sequelize.STRING
+	pressure: {
+		type: Sequelize.FLOAT
+	},
+	noise: {
+		type: Sequelize.FLOAT
+	},
+	etvoc: {
+		type: Sequelize.INTEGER
+	},
+	eco2: {
+		type: Sequelize.INTEGER
+	},
+	discomfort_index: {
+		type: Sequelize.FLOAT
+	},
+	heat_stroke: {
+		type: Sequelize.FLOAT
 	}
 }, {
 	freezeTableName: true,

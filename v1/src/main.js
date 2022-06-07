@@ -23,14 +23,13 @@ const isDevelopment = process.env.NODE_ENV == 'development'
 
 const configDir   = path.join(userHome, appname);
 const configFile  = path.join(configDir, 'config.json');
-const persistFile = path.join(configDir, 'persist.json');
 
 process.env["NODE_CONFIG_DIR"] = configDir; // コンフィグファイル置き場
 
 //////////////////////////////////////////////////////////////////////
 // 追加ライブラリ
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
-const { sqlite3 } = require('./models/localDBModels');   // DBデータと連携
+const { sqlite3, omronModel } = require('./models/localDBModels');   // DBデータと連携
 const { Op } = require("sequelize");
 
 const omron = require('usb-2jcie-bu');
@@ -48,6 +47,8 @@ let mainWindow = null;
 // configファイルがなければ作る，あれば読む
 // デフォルトの値にmargeする
 let config = {
+	comPort: "auto",
+	ledColor: "green"
 };
 
 
@@ -90,92 +91,9 @@ let writeConfigFile = function () {
 };
 
 
-let interfaces = os.networkInterfaces();
-let localaddresses = [];
-for (let k in interfaces) {
-	for (let k2 in interfaces[k]) {
-		let address = interfaces[k][k2];
-		if (address.family == 'IPv4' && !address.internal) {
-			localaddresses.push(address.address);
-		}
-	}
-};
-
-console.log('ipver:', config.network.IPver, 'ipv4:', config.network.IPv4, 'ipv6:', config.network.IPv6 );
-
-
-//////////////////////////////////////////////////////////////////////
-// 終了時の状態の保存
-
-// デフォルトの値にmargeする
-let persist = {
-
-};
-
-// 終了時の状態の保存
-let savePersistFile = function () {
-	persist.elData = elData;
-	persist.elObservedDevs = elObservedDevs;
-	persist.arpTable = arpTable;
-	persist.hueData = hueData;
-	persist.owmData = owmData;
-	persist.netatmoData = netatmoData;
-	persist.halProfile = halProfile;
-	persist.halData = halData;
-
-	fs.writeFile( persistFile, JSON.stringify(persist), (err) => {
-		if (err) throw err;
-		// console.log('正常に書き込みが完了しました');
-	});
-};
-
-// 終了時の状態の復元
-let loadPersistFile = function () {
-	// フォルダがなければ作る
-	if (!fs.existsSync(configDir)) {
-		fs.mkdirSync(configDir);
-	}
-	try{
-		let f = fs.readFileSync( persistFile, 'utf8');
-		Object.assign(persist, JSON.parse( f ) );
-	}catch( e ) {
-		// file not exists or file is empty
-		fs.writeFile( persistFile, '', (err) => {
-			if (err) throw err;
-			// console.log('正常に書き込みが完了しました');
-		});
-	}
-	elData      = persist.elData || {};
-};
-
-// 起動時に一回readしておく
-loadPersistFile();
-
-// スマートメータのためにポートリストも取っておく
-( async () => {
-	config.ESM.donglePassCandidates = [];
-	let ports = await mainESM.renewPortList();
-	ports.forEach( (p)=>{
-		config.ESM.donglePassCandidates.push(p.path);
-	});
-})();
-
-
 //////////////////////////////////////////////////////////////////////
 // local function
 //////////////////////////////////////////////////////////////////////
-// キーでソートしてからJSONにする
-// 単純にJSONで比較するとオブジェクトの格納順序の違いだけで比較結果がイコールにならない
-let objectSort = function (obj) {
-	let keys = Object.keys(obj).sort();
-	let map = {};
-	keys.forEach(function(key){
-		map[key] = obj[key];
-	});
-
-	return map;
-};
-
 // 現在時刻
 function getNow() {
 	let now = new Date();
@@ -212,18 +130,24 @@ let getToday = function() {
 
 //////////////////////////////////////////////////////////////////////
 // Omron管理
-omron.start(  (sensorData) => {
-	console.log( '----------------------------' );
-	let dt = new Date();
-	console.log( dt );
-	console.dir( sensorData );
-});
+let omronStart = function () {
+	omron.start(  (sensorData) => {
+		console.log( '----------------------------' );
+		let dt = new Date();
+		console.log( dt );
+		console.dir( sensorData );
+		sendIPCMessage( 'omron', sensorData );
+		omronModel.create( {date: dt, temperature: sensorData.temperature, humidity: sensorData.humidity,
+			anbient_light: sensorData.anbient_light, pressure: sensorData.pressure, noise: sensorData.noise,
+			etvoc: sensorData.etvoc, eco2: sensorData.eco2, discomfort_index: sensorData.discomfort_index,
+			heat_stroke: sensorData.heat_stroke} );
+	});
 
-
-// 2秒毎にチェック
-cron.schedule('*/2 * * * * *', () => {
-	omron.requestData();
-});
+	// 2秒毎にチェック
+	cron.schedule('*/2 * * * * *', () => {
+		omron.requestData();
+	});
+};
 
 
 
@@ -240,21 +164,7 @@ ipcMain.on('to-main', function (event, arg) {
 
 	switch (c.cmd) {
 		case "already": // 準備出来たらRenderer更新して，INF，Reloadもこれがよばれる
-		sendIPCMessage( "myIPaddr", localaddresses );
-		console.dir(config);
-		sendIPCMessage( 'config', config );
-
-		mainEL.conv.refer( objectSort(elData) , function (devs) {
-			sendIPCMessage( "fclEL", objectSort(devs) );
-		});
-
-		sendIPCMessage( "fclHue", hueData );
-		sendIPCMessage( "newOwm", owmData );
-		sendIPCMessage( "newNetatmo", netatmoData );
-		sendIPCMessage( "renewHAL", halData );
-
-		mainEL.api.sendOPC1( '224.0.23.0', [0x0e,0xf0,0x01], [0x0e,0xf0,0x01], 0x60, 0x80, [0x30]);// 立ち上がったのでONの宣言
-		mainEL.api.search();
+		omronStart();
 		break;
 
 		//----------------------------------
@@ -263,8 +173,6 @@ ipcMain.on('to-main', function (event, arg) {
 		console.log('configSave start:');
 		config.height = c.arg.height;
 		config.weight = c.arg.weight;
-		config.ellogExpireDays = c.arg.ellogExpireDays;
-		config.resultExpireDays = c.arg.resultExpireDays;
 		writeConfigFile();
 		break;
 
@@ -282,10 +190,7 @@ async function createWindow() {
 	// 何はともあれDBの準備，SQLite の初期化の完了を待つ
 	await sqlite3.sync().then(() => console.log("Local lifelog DB is ready."));
 
-	// HALのDBを準備して最終データを取得しておく
-	mainHALlocal.initialize( config );
-	halData = await mainHALlocal.getLastData();
-
+	// 画面の起動
 	mainWindow = new BrowserWindow({
 		width: 1024, height: 768,
 		webPreferences: { nodeIntegration: false, worldSafeExecuteJavaScript: true, preload: path.join(__dirname, 'public', 'js', 'index.js') }
@@ -300,31 +205,7 @@ async function createWindow() {
 	mainWindow.on('closed', () => {
 		mainWindow = null;
 	});
-
-
-	// 定期的に機器情報を取得のため送信
-	if (config) { // 設定ファイルがあれば読む
-		if (config.observationInterval && config.observationInterval != 0) { // 監視設定があれば
-			startObservationDevs(config.observationInterval);
-		}
-	}
-
-	// 起動したので機能スタート
-	ELStart();
-	ArpStart();
-	HueStart();
-	OwmStart();
-	NetatmoStart();
-	// IkeaStart();
-	ESMStart();
-
-	// SQLite のデータベースのレコードの削除処理
-	await mainHALlocal.truncatelogs();
-
-	// 家電操作ログのアップロードを開始
-	await mainHALsync.startUploadEldata();
 };
-
 
 app.on('ready', createWindow);
 
@@ -339,11 +220,8 @@ app.on("activate", () => {
 
 app.on('window-all-closed', () => {
 	writeConfigFile();
-	savePersistFile();
-	mainEL.stopObservation();
 	app.quit();	// macだろうとプロセスはkillしちゃう
 });
-
 
 // menu
 const menuItems = [{
