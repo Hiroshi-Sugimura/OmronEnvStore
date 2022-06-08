@@ -1,6 +1,6 @@
 {
 	"name": "OmronEnvStore",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "This app provides Sensing and Database for USB environment sensor (2JCIE-BU) producted by OMRON.",
 	"author": "Hiroshi SUGIMURA (Kanagawa Institute of Technology, JAPAN)",
 	"main": "main.js",
@@ -12,7 +12,7 @@
 		"sequelize": "^6.20.1",
 		"serialport": "^10.4.0",
 		"sqlite3": "^5.0.8",
-		"usb-2jcie-bu": "^0.0.2"
+		"usb-2jcie-bu": "^0.1.0"
 	},
 	"devDependencies": {
 		"devtron": "^1.4.0",
