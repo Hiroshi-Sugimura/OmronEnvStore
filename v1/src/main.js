@@ -130,24 +130,28 @@ let getToday = function() {
 
 //////////////////////////////////////////////////////////////////////
 // Omron管理
-let omronStarted = false;
 let omronStart = function () {
-	if( omronStarted ) { return; }
-	omronStarted = true;
-	omron.start(  (sensorData) => {
-		console.log( '----------------------------' );
-		let dt = new Date();
-		console.log( dt );
-		console.dir( sensorData );
-		sendIPCMessage( 'omron', sensorData );
-		omronModel.create( {date: dt, temperature: sensorData.temperature, humidity: sensorData.humidity,
-			anbient_light: sensorData.anbient_light, pressure: sensorData.pressure, noise: sensorData.noise,
-			etvoc: sensorData.etvoc, eco2: sensorData.eco2, discomfort_index: sensorData.discomfort_index,
-			heat_stroke: sensorData.heat_stroke} );
-	});
-
 	// 2秒毎にチェック
 	cron.schedule('*/2 * * * * *', () => {
+		omron.start(  (sensorData, error) => {
+			if( error ) {
+				if( error == 'INF: port is closed.' ) {
+					sendIPCMessage( 'omronDisconnected', null );
+				}
+				// console.error( error );
+				return;
+			}
+			// console.log( '----------------------------' );
+			let dt = new Date();
+			// console.log( dt );
+			// console.dir( sensorData );
+			sendIPCMessage( 'omron', sensorData );
+			omronModel.create( {date: dt, temperature: sensorData.temperature, humidity: sensorData.humidity,
+				anbient_light: sensorData.anbient_light, pressure: sensorData.pressure, noise: sensorData.noise,
+				etvoc: sensorData.etvoc, eco2: sensorData.eco2, discomfort_index: sensorData.discomfort_index,
+				heat_stroke: sensorData.heat_stroke} );
+		});
+
 		omron.requestData();
 	});
 };

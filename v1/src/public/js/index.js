@@ -19,9 +19,10 @@ window.addEventListener('DOMContentLoaded', onLoad);
 function onLoad() {
 	console.log('## onLoad');
 
-	// 接続・切断ボタンの button 要素
-	this.req_btn_el = document.getElementById('req-btn');
-	this.req_btn_el.textContent = 'Dongle is not found.';
+	// 接続・未接続の button 要素
+	document.getElementById('connected').hidden = true;
+	document.getElementById('disconnected').hidden = false;
+
 
 	// URLを外部ブラウザで開く
 	window.URLopen = function(url) {
@@ -37,8 +38,16 @@ function onLoad() {
 		let c = JSON.parse(arg);    // arg = {cmd, arg} の形式でくる
 
 		switch (c.cmd) {
-			case "omron": // HAL情報
+			case "omron": // omron情報、接続してる
+			document.getElementById('connected').hidden = false;
+			document.getElementById('disconnected').hidden = true;
 			renewScreen( c.arg );
+			break;
+
+			case "omronDisconnected":  // 切断
+			document.getElementById('connected').hidden = true;
+			document.getElementById('disconnected').hidden = false;
+			break;
 		}
 	});
 
