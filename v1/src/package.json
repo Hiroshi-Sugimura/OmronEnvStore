@@ -7,18 +7,18 @@
 	"homepage": "./",
 	"dependencies": {
 		"date-utils": "^1.2.21",
-		"electron-log": "^4.4.7",
+		"electron-log": "^4.4.8",
 		"node-cron": "^3.0.1",
-		"sequelize": "^6.20.1",
+		"sequelize": "^6.21.3",
 		"serialport": "^10.4.0",
-		"sqlite3": "^5.0.8",
+		"sqlite3": "^5.0.9",
 		"usb-2jcie-bu": "^0.1.2"
 	},
 	"devDependencies": {
 		"devtron": "^1.4.0",
-		"electron": "^19.0.4",
-		"electron-rebuild": "^3.2.7",
-		"electron-store": "^8.0.1"
+		"electron": "^19.0.8",
+		"electron-rebuild": "^3.2.8",
+		"electron-store": "^8.0.2"
 	},
 	"scripts": {
 		"start": "electron . --trace-warning",
