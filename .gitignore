@@ -4,3 +4,4 @@ v1/src/node_modules/*
 OmronEnv.db
 config.json
 package-lock.json
+v2/src/node_modules/
