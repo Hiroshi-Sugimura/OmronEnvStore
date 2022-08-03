@@ -21,14 +21,11 @@ const isMac    = process.platform == "darwin" ? true : false;
 const userHome = process.env[ isWin ? "USERPROFILE" : "HOME"];
 const isDevelopment = process.env.NODE_ENV == 'development'
 
-const configDir   = path.join(userHome, appname);
-const configFile  = path.join(configDir, 'config.json');
-
-process.env["NODE_CONFIG_DIR"] = configDir; // コンフィグファイル置き場
 
 //////////////////////////////////////////////////////////////////////
 // 追加ライブラリ
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
+const Store = require('electron-store');
 const { sqlite3, omronModel } = require('./models/localDBModels');   // DBデータと連携
 const { Op } = require("sequelize");
 
@@ -43,52 +40,27 @@ let mainWindow = null;
 
 //////////////////////////////////////////////////////////////////////
 // config
-
-// configファイルがなければ作る，あれば読む
-// デフォルトの値にmargeする
-let config = {
-	comPort: "auto",
-	ledColor: "green"
-};
-
-
-// 設定ファイルを読む
-let readConfigFile = function () {
-	// フォルダがなければ作る
-	if (!fs.existsSync(configDir)) {
-		fs.mkdirSync(configDir);
-	}
-	try {
-		let f = fs.readFileSync(configFile, 'utf8');
-		Object.assign(config, JSON.parse(f));
-	} catch (e) {
-		// file not exists or file is empty
-		fs.writeFile(configFile, '', (err) => {
-			if (err) throw err;
-			// console.log('正常に書き込みが完了しました');
-		});
-	}
-
-	// network config
-	if (config.network) {  // ネットワーク設定の指定あり
-		if (config.network.IPver !== 0 || config.network.IPver !== 4 || config.network.IPver !== 6) {
-			config.network.IPver = 0;
-		}
+// configファイルのデフォルトの値
+const configSchema = {
+	comPort: {
+		type: 'string',
+		default: "auto"
+	},
+	ledColor: {
+		type: 'string',
+		default: "green"
+	},
+	width: {
+		type: 'number',
+		default: 1024
+	},
+	height: {
+		type: 'number',
+		default: 768
 	}
 };
 
-// 起動時に一回readしておく
-readConfigFile();
-
-// write config
-let writeConfigFile = function () {
-	fs.writeFile(configFile, JSON.stringify(config), (err) => {
-		if (err) throw err;
-
-		// console.log('正常に書き込みが完了しました');
-		sendIPCMessage( "configSaved", '' );  // 保存したので画面に通知
-	});
-};
+const store = new Store({configSchema});
 
 
 //////////////////////////////////////////////////////////////////////
@@ -124,6 +96,15 @@ let getToday = function() {
 		('0' + now.getDate()).slice(-2)
 		].join('-');
 	return today;
+};
+
+
+function writeConfigFile() {
+	// console.dir( mainWindow.getBounds() );
+	// store.set('width', mainWindow.getBounds().width);
+	// store.set('height', mainWindow.getBounds().height);
+	store.set( 'width', mainWindow.getSize()[0]);
+	store.set( 'height', mainWindow.getSize()[1]);
 };
 
 
@@ -174,8 +155,6 @@ ipcMain.on('to-main', function (event, arg) {
 		// 設定保存
 		case 'configSave':
 		console.log('configSave start:');
-		config.height = c.arg.height;
-		config.weight = c.arg.weight;
 		writeConfigFile();
 		break;
 
@@ -202,7 +181,8 @@ async function createWindow() {
 
 	// 画面の起動
 	mainWindow = new BrowserWindow({
-		width: 1024, height: 768,
+		width: store.get('width'),
+		height: store.get('height'),
 		webPreferences: {
 			nodeIntegration: false, // default:false
 			contextIsolation: true, // default:true
@@ -233,8 +213,14 @@ app.on("activate", () => {
 	}
 });
 
-app.on('window-all-closed', () => {
-	writeConfigFile();
+// window削除する処理にひっかけて
+app.on('cloase', async () => {
+	await writeConfigFile();
+});
+
+
+// window全部閉じたらappも終了する
+app.on('window-all-closed', async () => {
 	app.quit();	// macだろうとプロセスはkillしちゃう
 });
 
@@ -245,7 +231,8 @@ const menuItems = [{
 		{
 			label: 'Preferences...',
 			accelerator: isMac ? 'Command+,' : 'Control+,',
-			click: function () { shell.showItemInFolder(configFile); }
+			click: function () { shell.showItemInFolder( app.getPath('userData') ); }
+			// click: function () { store.openInEditor(); }
 		},
 		{
 			label: 'Quit',
