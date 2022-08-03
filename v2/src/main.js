@@ -170,10 +170,6 @@ ipcMain.on('to-main', function (event, arg) {
 	let c = JSON.parse(arg);
 
 	switch (c.cmd) {
-		case "already": // 準備出来たらRenderer更新、画面Reloadもこれが呼ばれるので注意
-		omronStart();
-		break;
-
 		//----------------------------------
 		// 設定保存
 		case 'configSave':
@@ -190,6 +186,13 @@ ipcMain.on('to-main', function (event, arg) {
 });
 
 
+ipcMain.handle( 'already', async (event, arg) => {
+	console.log('already', arg);
+	omronStart();
+});
+
+
+
 //////////////////////////////////////////////////////////////////////
 // foreground
 // ここがEntrypointと考えても良い
@@ -200,10 +203,15 @@ async function createWindow() {
 	// 画面の起動
 	mainWindow = new BrowserWindow({
 		width: 1024, height: 768,
-		webPreferences: { nodeIntegration: false, worldSafeExecuteJavaScript: true, preload: path.join(__dirname, 'public', 'js', 'index.js') }
+		webPreferences: {
+			nodeIntegration: false, // default:false
+			contextIsolation: true, // default:true
+			worldSafeExecuteJavaScript: true,
+			preload: path.join(__dirname, 'preload.js')
+		}
 	});
 	menuInitialize();
-	mainWindow.loadURL('file://' + __dirname + '/public/index.htm');
+	mainWindow.loadURL( path.join(__dirname, 'public', 'index.htm') );
 
 	if (isDevelopment) { // 開発モードならDebugGUIひらく
 		mainWindow.webContents.openDevTools()
@@ -281,6 +289,7 @@ let sendIPCMessage = function( cmdStr, argStr ) {
 		mainWindow.webContents.send('to-renderer', JSON.stringify({ cmd: cmdStr, arg: argStr} ) );
 	}
 };
+
 
 //////////////////////////////////////////////////////////////////////
 // EOF

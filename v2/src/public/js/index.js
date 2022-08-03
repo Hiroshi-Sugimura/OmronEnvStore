@@ -5,16 +5,9 @@
 //////////////////////////////////////////////////////////////////////
 'use strict'
 
-window.__devtron = { require: require, process: process }
-
-const { ipcRenderer } = require('electron');
-const log = require('electron-log');
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // HTMLがロードされたら実行，とりあえずここに全部突っ込む
 window.addEventListener('DOMContentLoaded', onLoad);
-
 
 function onLoad() {
 	console.log('## onLoad');
@@ -30,12 +23,12 @@ function onLoad() {
 		shell.openExternal(url);
 	}
 
-
 	//////////////////////////////////////////////////////////////////
 	// MainProcessからのメッセージ振り分け
-	ipcRenderer.on('to-renderer', (event, arg) => {
+	window.ipc.on( 'to-renderer', (event, args) => {
+		console.log( 'to-renderer', args );
 		// console.dir(arg);
-		let c = JSON.parse(arg);    // arg = {cmd, arg} の形式でくる
+		let c = JSON.parse(args);    // arg = {cmd, arg} の形式でくる
 
 		switch (c.cmd) {
 			case "omron": // omron情報、接続してる
@@ -82,7 +75,7 @@ function onLoad() {
 			discomfort_index_color = 'has-background-warning';
 			discomfort_index_desc = '暑くて汗が出る';
 		} else {
-			discomfort_index_color = 'has-background-danger	';
+			discomfort_index_color = 'has-background-danger';
 			discomfort_index_desc = '暑くてたまらない';
 		}
 		const discomfort_index_cont_el = document.getElementById('discomfort_index_cont');
@@ -113,7 +106,7 @@ function onLoad() {
 			heat_stroke_color = 'has-background-warning';
 			heat_stroke_desc = '厳重警戒';
 		} else {
-			heat_stroke_color = 'has-background-danger	';
+			heat_stroke_color = 'has-background-danger';
 			heat_stroke_desc = '危険';
 		}
 		const heat_stroke_cont_el = document.getElementById('heat_stroke_cont');
@@ -145,7 +138,7 @@ function onLoad() {
 
 	// この関数の最後に呼ぶ
 	// 準備できたことをmainプロセスに伝える
-	ipcRenderer.send('to-main', JSON.stringify({ cmd: "already" }));
+	window.ipc.already();
 };
 
 
