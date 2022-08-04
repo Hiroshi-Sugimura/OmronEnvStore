@@ -34,77 +34,63 @@ const cron = require('node-cron');
 require('date-utils');
 
 
-// electronのmain window
+// electron設定とmain window
+app.disableHardwareAcceleration();
 let mainWindow = null;
 
 
 //////////////////////////////////////////////////////////////////////
 // config
-// configファイルのデフォルトの値
+// configファイルのデフォルトの値、schemaによるdefaults optionはうまく動かない
+/*
 const configSchema = {
-	comPort: {
-		type: 'string',
-		default: "auto"
+	omron: {
+		comPort: {
+			type: 'string',
+			default: "auto"
+		},
+		ledColor: {
+			type: 'string',
+			default: "green"
+		},
+	}
+	window: {
+		width: {
+			type: 'number',
+			default: 1024
+		},
+		height: {
+			type: 'number',
+			default: 768
+		}
+	}
+};
+*/
+
+const config = {
+	omron: {
+		comPort: "auto",
+		ledColor: "green"
 	},
-	ledColor: {
-		type: 'string',
-		default: "green"
-	},
-	width: {
-		type: 'number',
-		default: 1024
-	},
-	height: {
-		type: 'number',
-		default: 768
+	window: {
+		width: 1024,
+		height: 768
 	}
 };
 
-const store = new Store({configSchema});
+// const store = new Store({configSchema});
+const store = new Store();
 
-
-//////////////////////////////////////////////////////////////////////
-// local function
-//////////////////////////////////////////////////////////////////////
-// 現在時刻
-function getNow() {
-	let now = new Date();
-
-	// 日付
-	let date = [
-		now.getFullYear().toString(),
-		('0' + (now.getMonth() + 1)).slice(-2),
-		('0' + now.getDate()).slice(-2)
-		].join('-');
-
-	// 時刻
-	let time = [
-		('0' + now.getHours()).slice(-2),
-		('0' + now.getMinutes()).slice(-2),
-		('0' + now.getSeconds()).slice(-2)
-		].join(':');
-
-	return date + ' ' + time;
+function readConfigFile() {
+	config.omron = store.get( 'omron', config.omron);
+	config.window = store.get( 'window', config.window);
+	console.log(config);
 }
 
-// 今日の日付 ("YYYY-MM-DD")
-let getToday = function() {
-	let now = new Date();
-	let today = [
-		now.getFullYear().toString(),
-		('0' + (now.getMonth() + 1)).slice(-2),
-		('0' + now.getDate()).slice(-2)
-		].join('-');
-	return today;
-};
-
-
 function writeConfigFile() {
-	// console.dir( mainWindow.getBounds() );
-	// store.set('width', mainWindow.getBounds().width);
-	// store.set('height', mainWindow.getBounds().height);
-	store.set( 'width', mainWindow.getSize()[0]);
-	store.set( 'height', mainWindow.getSize()[1]);
+	store.set( 'omron', config.omron );
+	store.set( 'window.width', mainWindow.getSize()[0]);
+	store.set( 'window.height', mainWindow.getSize()[1]);
 };
 
 
@@ -171,7 +157,6 @@ ipcMain.handle( 'already', async (event, arg) => {
 });
 
 
-
 //////////////////////////////////////////////////////////////////////
 // foreground
 // ここがEntrypointと考えても良い
@@ -181,8 +166,8 @@ async function createWindow() {
 
 	// 画面の起動
 	mainWindow = new BrowserWindow({
-		width: store.get('width'),
-		height: store.get('height'),
+		width: store.get('window.width'),
+		height: store.get('window.height'),
 		webPreferences: {
 			nodeIntegration: false, // default:false
 			contextIsolation: true, // default:true
@@ -197,30 +182,39 @@ async function createWindow() {
 		mainWindow.webContents.openDevTools()
 	}
 
-	mainWindow.on('closed', () => {
+
+	// window closeする処理にひっかけて直前処理
+	mainWindow.on('close', async () => {
+		console.log('# close');
+		await writeConfigFile();
+	});
+
+	// window closeした後にひっかけて直後処理
+	mainWindow.on('closed', async () => {
+		console.log( '# closed' );
 		mainWindow = null;
 	});
 };
 
-app.on('ready', createWindow);
+app.on('ready', async () => {
+	console.log('# ready');
+	await readConfigFile();
+	createWindow();
+});
 
 // アプリケーションがアクティブになった時の処理
 // （Macだと、Dockがクリックされた時）
 app.on("activate", () => {
+	console.log('# activate');
 	// メインウィンドウが消えている場合は再度メインウィンドウを作成する
 	if (mainWindow === null) {
 		createWindow();
 	}
 });
 
-// window削除する処理にひっかけて
-app.on('cloase', async () => {
-	await writeConfigFile();
-});
-
-
 // window全部閉じたらappも終了する
 app.on('window-all-closed', async () => {
+	console.log('# window-all-close');
 	app.quit();	// macだろうとプロセスはkillしちゃう
 });
 
@@ -230,9 +224,13 @@ const menuItems = [{
 	submenu: [
 		{
 			label: 'Preferences...',
-			accelerator: isMac ? 'Command+,' : 'Control+,',
 			click: function () { shell.showItemInFolder( app.getPath('userData') ); }
 			// click: function () { store.openInEditor(); }
+		},
+		{
+			label: 'Open Config.json',
+			accelerator: isMac ? 'Command+,' : 'Control+,',
+			click: async function () { await writeConfigFile(); store.openInEditor(); }
 		},
 		{
 			label: 'Quit',
